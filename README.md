@@ -1,34 +1,50 @@
-# data-extraction — camada de coleta de dados
+# Pipeline de dados do Sentinela Verde
 
-Ponto de entrada pra várias coletas independentes (scraping, API, etc.), cada
-uma na sua pasta dentro de `extract/`, com dois pontos em comum: onde guardam
-o dado bruto (`data/raw/`) e onde entregam o resultado final
-(`data/raw/outputs_extraction/`).
+Repositório com todas as etapas do processamento de dados do projeto, da
+coleta bruta até o dado pronto pra análise: **extração → transformação →
+modelagem → analytics**. Cada etapa é uma pasta própria na raiz, e o dado
+percorre as camadas em `data/` (`raw` → `silver` → `gold`) conforme passa por
+elas.
 
 ```
 data-extraction/
-├── extract/
+├── extract/                       # ETAPA 1: coleta de dado bruto
 │   ├── scraping_datacentermap/    # coleta: scraping do datacentermap.com
 │   │   └── README.md              #   -> como rodar, estrutura interna, colunas do CSV
 │   └── bigquery_ibge/             # coleta: Base dos Dados / IBGE (BigQuery)
 │       └── README.md              #   -> como rodar, autenticação, colunas do CSV
-├── data/
-│   ├── raw/                       # dado bruto de todas as coletas, uma pasta por fonte
-│   │   ├── datacentermap/
-│   │   │   ├── pais/
-│   │   │   ├── regioes/
-│   │   │   └── datacenters/
-│   │   └── outputs_extraction/    # CSVs finais de todas as coletas
-│   │       ├── datacentermap_datacenters.csv
-│   │       └── ibge_municipios.csv
-│   ├── silver/                    # dado tratado/normalizado (ainda vazio)
-│   └── gold/                      # dado pronto pra consumo final (ainda vazio)
-├── transform/                     # transformação raw -> silver/gold (ainda vazio)
-├── modeling/                      # modelagem (ainda vazio)
-└── analytics/                     # análises/consumo final (ainda vazio)
+├── transform/                     # ETAPA 2: raw -> silver/gold (ainda vazio)
+├── modeling/                      # ETAPA 3: modelagem sobre o dado tratado (ainda vazio)
+├── analytics/                     # ETAPA 4: análises/consumo final (ainda vazio)
+└── data/                          # dado em trânsito entre as etapas
+    ├── raw/                       # dado bruto de todas as coletas, uma pasta por fonte
+    │   ├── datacentermap/
+    │   │   ├── pais/
+    │   │   ├── regioes/
+    │   │   └── datacenters/
+    │   └── outputs_extraction/    # CSVs finais de todas as coletas (saída da etapa extract)
+    │       ├── datacentermap_datacenters.csv
+    │       └── ibge_municipios.csv
+    ├── silver/                    # dado tratado/normalizado (saída da etapa transform, ainda vazio)
+    └── gold/                      # dado pronto pra consumo final (saída da modelagem/analytics, ainda vazio)
 ```
 
-## Convenção pras coletas
+## Etapas do pipeline
+
+1. **`extract/`** — coletas independentes (scraping, API, etc.), cada uma na
+   sua própria pasta. Detalhes na seção [Coletas](#coletas) abaixo.
+2. **`transform/`** — limpeza, normalização e merge do que está em
+   `data/raw/` pra produzir `data/silver/`. Ainda vazio.
+3. **`modeling/`** — modelagem (estatística/ML) em cima do dado de
+   `data/silver/`. Ainda vazio.
+4. **`analytics/`** — análises e artefatos de consumo final, a partir de
+   `data/silver/` e/ou `data/gold/`. Ainda vazio.
+
+À medida que `transform/`, `modeling/` e `analytics/` ganharem conteúdo, cada
+uma passa a ter seu próprio README com o "como rodar" específico, do mesmo
+jeito que as pastas de coleta já têm.
+
+## Convenção pras coletas (`extract/`)
 
 Cada coleta é uma pasta própria dentro de `extract/` (`scraping_datacentermap/`,
 `bigquery_ibge/`, ...) com seu próprio código, `config.py` e (se precisar)
@@ -40,8 +56,8 @@ compartilhado é só a **saída**, guardada fora de `extract/`, em `data/raw/`:
   API pra JSON pequeno). Também funciona como cache incremental: se o item já
   está lá com status `ok`, a coleta não busca de novo.
 - **`data/raw/outputs_extraction/<fonte>_<algo>.csv`** — o(s) CSV(s) finais e
-  prontos pra uso de cada coleta, já limpos/mesclados. É o que outra etapa
-  (`transform/`, `modeling/`, `analytics/`) deveria consumir.
+  prontos pra uso de cada coleta, já limpos/mesclados. É o que a etapa
+  `transform/` deveria consumir.
 
 CSVs intermediários que só interessam a uma coleta (ex.:
 `extract/scraping_datacentermap/output/regioes.csv`) ficam dentro da própria
