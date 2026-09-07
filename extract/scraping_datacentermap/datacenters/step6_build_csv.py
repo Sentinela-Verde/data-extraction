@@ -1,5 +1,5 @@
 """Step 6 — Junta os caches de cada datacenter (overview + specs) num único
-CSV final. Não acessa a internet, só lê os JSONs de raw_data/datacenters/.
+CSV final. Não acessa a internet, só lê os JSONs de data/raw/datacenters/.
 
 `dc` do overview e `dc` do specs trazem blocos diferentes preenchidos (a API
 retorna campos diferentes por aba) — por isso são mesclados campo a campo em

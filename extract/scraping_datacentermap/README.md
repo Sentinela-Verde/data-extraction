@@ -2,9 +2,9 @@
 
 Pipeline de scraping organizado em steps bem definidos, com cache
 incremental em disco, para não precisar reprocessar tudo a cada execução.
-É uma das coletas dentro de `data-extraction/` — ver o
-[README da raiz](../README.md) pra entender como as coletas se encaixam
-(pastas `raw_data/` e `outputs/` compartilhadas).
+É uma das coletas dentro de `data-extraction/extract/` — ver o
+[README da raiz](../../README.md) pra entender como as coletas se encaixam
+(pasta `data/raw/` compartilhada).
 
 ## Ideia geral
 
@@ -12,7 +12,7 @@ As páginas do datacentermap.com são Next.js e trazem os dados já prontos em
 JSON dentro de `<script id="__NEXT_DATA__">` — não precisamos guardar o HTML
 inteiro nem depender de seletores CSS (`<div class="header">` etc., que
 quebram fácil). Cada step de scraping abre a página, tira só o JSON que
-interessa, e salva um arquivo pequeno em `../raw_data/datacentermap/` (ver
+interessa, e salva um arquivo pequeno em `../../data/raw/datacentermap/` (ver
 seção própria abaixo). Os outros steps só leem isso localmente.
 
 Entrada única do pipeline: `config.PAIS` (hoje `"brazil"`), de onde sai a URL
@@ -26,30 +26,32 @@ que processa (local) lado a lado:
 
 ```
 data-extraction/
-├── raw_data/datacentermap/    # dado bruto extraído (= o cache) — compartilhado, ver README da raiz
-│   ├── pais/
-│   ├── regioes/
-│   └── datacenters/
-├── outputs/                   # CSVs finais de todas as coletas
-│   └── datacentermap_datacenters.csv
-└── scraping_datacentermap/    # <- você está aqui
-    ├── config.py              # país, caminhos, delays — a única coisa que normalmente se muda
-    ├── run_pipeline.py        # roda tudo (ou uma etapa) na ordem certa
-    ├── comum/                 # código compartilhado pelos steps desse coletor
-    │   ├── cache_store.py     #   ler/gravar raw_data (o cache)
-    │   └── next_data.py       #   extrair __NEXT_DATA__ e detectar bloqueio
-    ├── pais/
-    │   ├── step1_scrape_pais.py       # Selenium: lista de regiões do país
-    │   └── step2_montar_regioes.py    # local: monta output/regioes.csv
-    ├── regioes/
-    │   ├── step3_scrape_regioes.py            # Selenium: datacenters de cada região
-    │   └── step4_montar_links_datacenters.py  # local: monta output/datacenters_links.csv
-    ├── datacenters/
-    │   ├── step5_scrape_datacenters.py  # Selenium: overview + specs de cada datacenter
-    │   └── step6_build_csv.py           # local: monta o CSV final em ../outputs/
-    └── output/                 # CSVs intermediários (só interessam a essa coleta)
-        ├── regioes.csv
-        └── datacenters_links.csv
+├── data/raw/
+│   ├── datacentermap/          # dado bruto extraído (= o cache) — compartilhado, ver README da raiz
+│   │   ├── pais/
+│   │   ├── regioes/
+│   │   └── datacenters/
+│   └── outputs_extraction/     # CSVs finais de todas as coletas
+│       └── datacentermap_datacenters.csv
+└── extract/
+    └── scraping_datacentermap/    # <- você está aqui
+        ├── config.py              # país, caminhos, delays — a única coisa que normalmente se muda
+        ├── run_pipeline.py        # roda tudo (ou uma etapa) na ordem certa
+        ├── comum/                 # código compartilhado pelos steps desse coletor
+        │   ├── cache_store.py     #   ler/gravar data/raw (o cache)
+        │   └── next_data.py       #   extrair __NEXT_DATA__ e detectar bloqueio
+        ├── pais/
+        │   ├── step1_scrape_pais.py       # Selenium: lista de regiões do país
+        │   └── step2_montar_regioes.py    # local: monta output/regioes.csv
+        ├── regioes/
+        │   ├── step3_scrape_regioes.py            # Selenium: datacenters de cada região
+        │   └── step4_montar_links_datacenters.py  # local: monta output/datacenters_links.csv
+        ├── datacenters/
+        │   ├── step5_scrape_datacenters.py  # Selenium: overview + specs de cada datacenter
+        │   └── step6_build_csv.py           # local: monta o CSV final em ../../data/raw/outputs_extraction/
+        └── output/                 # CSVs intermediários (só interessam a essa coleta)
+            ├── regioes.csv
+            └── datacenters_links.csv
 ```
 
 ```
@@ -65,7 +67,7 @@ data-extraction/
 Trocar `config.PAIS` (ex.: para outro país listado no datacentermap.com) roda
 o mesmo pipeline pra outro lugar, sem mudar nenhum step.
 
-## `raw_data/datacentermap/` — o dado bruto extraído (e o cache)
+## `data/raw/datacentermap/` — o dado bruto extraído (e o cache)
 
 Cada item (o país, uma região, ou uma aba de um datacenter) vira um `.json`
 com um `status`: `ok`, `bloqueado` (tomou rate limit) ou `erro`. É esse mesmo
@@ -74,7 +76,7 @@ automaticamente** tudo que já está `ok` — só tenta de novo o que faltou ou
 que foi bloqueado da última vez.
 
 ```
-raw_data/datacentermap/
+data/raw/datacentermap/
 ├── pais/
 │   └── brazil.json
 ├── regioes/
@@ -182,7 +184,7 @@ usar só um deles, e pega `serviceplan` só do overview.
 ## Cache incremental
 
 Rodar um step de novo **pula automaticamente** tudo que já está `ok` em
-`raw_data/datacentermap/` — só tenta de novo o que faltou ou que foi
+`data/raw/datacentermap/` — só tenta de novo o que faltou ou que foi
 bloqueado da última vez. Isso quer dizer que dá pra:
 - Parar o processo no meio (Ctrl+C, queda de conexão, PC desligou) e
   continuar de onde parou depois, sem perder o que já foi baixado.
@@ -199,7 +201,7 @@ cache como se fosse um dado válido, e é buscado de novo automaticamente.
 Primeira vez:
 
 ```bash
-cd data-extraction/scraping_datacentermap
+cd data-extraction/extract/scraping_datacentermap
 pip install -r requirements.txt
 ```
 
@@ -252,11 +254,11 @@ porque ele pula direto pro que falta):
 | Step | Arquivo | Precisa que já exista |
 |---|---|---|
 | 1 | `pais/step1_scrape_pais.py` | nada |
-| 2 | `pais/step2_montar_regioes.py` | `raw_data/datacentermap/pais/<pais>.json` (do step 1) |
+| 2 | `pais/step2_montar_regioes.py` | `data/raw/datacentermap/pais/<pais>.json` (do step 1) |
 | 3 | `regioes/step3_scrape_regioes.py` | `output/regioes.csv` (do step 2) |
-| 4 | `regioes/step4_montar_links_datacenters.py` | `raw_data/datacentermap/regioes/*.json` (do step 3) |
+| 4 | `regioes/step4_montar_links_datacenters.py` | `data/raw/datacentermap/regioes/*.json` (do step 3) |
 | 5 | `datacenters/step5_scrape_datacenters.py` | `output/datacenters_links.csv` (do step 4) |
-| 6 | `datacenters/step6_build_csv.py` | `output/datacenters_links.csv` (do step 4) + `raw_data/datacentermap/datacenters/*.json` (do step 5) |
+| 6 | `datacenters/step6_build_csv.py` | `output/datacenters_links.csv` (do step 4) + `data/raw/datacentermap/datacenters/*.json` (do step 5) |
 
 Cada step também pode ser aberto e rodado célula-a-célula num notebook, se
 preferir — são só funções `main()` sem estado escondido em variável de
@@ -266,7 +268,7 @@ notebook.
 
 Se você já tem uma pasta de HTMLs salvos por fora (`regiao_<slug>.html` e
 `datacenter_<slug>[_specs].html`), dá pra importar direto pro
-`raw_data/datacentermap/` sem gastar nenhuma requisição nova:
+`data/raw/datacentermap/` sem gastar nenhuma requisição nova:
 
 ```bash
 python importar_html.py --regioes "caminho/para/html_regiao" --datacenters "caminho/para/html_datacenter"
@@ -283,7 +285,7 @@ importar, rode `step4_montar_links_datacenters.py` e `step6_build_csv.py`
 - `output/regioes.csv` — as regiões do país e seus links (intermediário).
 - `output/datacenters_links.csv` — todos os datacenters únicos encontrados,
   com o link de cada um (intermediário).
-- `../outputs/datacentermap_datacenters.csv` — o resultado final, um
+- `../../data/raw/outputs_extraction/datacentermap_datacenters.csv` — o resultado final, um
   datacenter por linha (`;` como separador, `utf-8-sig`, abre certo no
   Excel). Colunas, na ordem:
 
@@ -307,6 +309,6 @@ importar, rode `step4_montar_links_datacenters.py` e `step6_build_csv.py`
   precisar de ajuste se aparecerem errados numa extração real.
 
   **Atenção**: `colo_*`/`cloud_*` só saem preenchidos pra datacenters
-  raspados **depois** dessa mudança — entradas de `raw_data/datacentermap/datacenters/`
+  raspados **depois** dessa mudança — entradas de `data/raw/datacentermap/datacenters/`
   raspadas antes não têm `serviceplan` salvo. Rode `--forcar` no step 5 pra
   essas se quiser essas colunas completas também.

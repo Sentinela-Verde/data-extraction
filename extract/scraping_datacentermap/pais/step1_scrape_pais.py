@@ -6,7 +6,7 @@ contagem de datacenters de cada uma, segundo o site) já vem pronta dentro do
 __NEXT_DATA__ dessa página, em pageProps.mapdata.geos — a mesma estrutura
 usada pelas páginas de região (step 3), só que com "geos" no lugar de "dcs".
 
-Só uma página, mas ainda assim cacheada em raw_data/pais/<pais>.json — se
+Só uma página, mas ainda assim cacheada em data/raw/pais/<pais>.json — se
 "ok", rodar de novo não bate no site à toa. É a primeira etapa da árvore:
 
 .
@@ -76,7 +76,7 @@ def main(forcar: bool = False):
         driver.quit()
 
     salvar(config.RAW_DATA_PAIS, config.PAIS, status, dados, tentativas_antes + 1)
-    print(f"Status: {status} -> raw_data/pais/{config.PAIS}.json")
+    print(f"Status: {status} -> data/raw/pais/{config.PAIS}.json")
 
 
 if __name__ == "__main__":

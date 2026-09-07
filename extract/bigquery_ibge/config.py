@@ -2,9 +2,9 @@
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-# raiz do repo — onde ficam as pastas compartilhadas entre coletores
-# (raw_data/ e outputs/) e o .env, um nível acima de bigquery_ibge/
-RAIZ_PROJETO = BASE_DIR.parent
+# raiz do repo — onde ficam a pasta data/ (compartilhada entre coletores) e o
+# .env, dois níveis acima de extract/bigquery_ibge/
+RAIZ_PROJETO = BASE_DIR.parent.parent
 
 FONTE = "ibge"  # nome dessa coleta, usado no nome do CSV final
 
@@ -17,8 +17,8 @@ ENV_PATH = RAIZ_PROJETO / ".env"
 
 # --- Saída ------------------------------------------------------------------
 # O CSV final é o "produto" dessa coleta e vai pra pasta compartilhada
-# data-extraction/outputs/, junto com o resultado de outras coletas (ex.: datacentermap).
-OUTPUTS_COMPARTILHADOS = RAIZ_PROJETO / "outputs"
+# data/raw/outputs_extraction/, junto com o resultado de outras coletas (ex.: datacentermap).
+OUTPUTS_COMPARTILHADOS = RAIZ_PROJETO / "data" / "raw" / "outputs_extraction"
 CSV_FINAL = OUTPUTS_COMPARTILHADOS / f"{FONTE}_municipios.csv"
 
 # --- Recorte dos dados --------------------------------------------------

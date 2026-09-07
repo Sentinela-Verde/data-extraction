@@ -2,7 +2,7 @@
 guarda só os dados que interessam: a lista de datacenters daquela região
 (pageProps.mapdata.dcs) e as estatísticas do mercado (pageProps.geodata).
 
-Produtivo: cada região vira um arquivo em raw_data/regioes/<slug>.json. Rodar
+Produtivo: cada região vira um arquivo em data/raw/regioes/<slug>.json. Rodar
 o script de novo pula toda região que já está com status "ok" — só busca o
 que ainda falta ou o que foi bloqueado da última vez.
 """

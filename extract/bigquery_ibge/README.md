@@ -3,8 +3,8 @@
 Extração dos indicadores socioeconômicos dos municípios brasileiros (PIB,
 população, vocação econômica) via BigQuery, usando a
 [Base dos Dados](https://basedosdados.org/). É uma das coletas dentro de
-`data-extraction/` — ver o [README da raiz](../README.md) pra entender como as
-coletas se encaixam (pastas `raw_data/` e `outputs/` compartilhadas).
+`data-extraction/extract/` — ver o [README da raiz](../../README.md) pra
+entender como as coletas se encaixam (pasta `data/raw/` compartilhada).
 
 ## Ideia geral
 
@@ -43,14 +43,14 @@ Duas coisas diferentes, não confundir:
 ## Como rodar
 
 ```bash
-cd data-extraction/bigquery_ibge
+cd data-extraction/extract/bigquery_ibge
 pip install -r requirements.txt
 python step0a_extract_dados_ibge.py
 ```
 
 ## Saída
 
-- `../outputs/ibge_municipios.csv` — um município por linha, `utf-8-sig`
+- `../../data/raw/outputs_extraction/ibge_municipios.csv` — um município por linha, `utf-8-sig`
   (abre certo no Excel). Colunas:
 
   | Grupo | Colunas |

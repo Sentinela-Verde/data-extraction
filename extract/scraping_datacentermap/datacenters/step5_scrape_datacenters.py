@@ -4,7 +4,7 @@ cada uma — é onde ficam certificações, potência, segurança etc. — mais 
 `serviceplan` (planos de colocation/cloud), que só vem preenchido na aba
 overview (na specs ele vem `null`).
 
-Cada (slug, aba) vira um arquivo raw_data/datacenters/<slug>__<aba>.json.
+Cada (slug, aba) vira um arquivo data/raw/datacenters/<slug>__<aba>.json.
 Rodar de novo pula tudo que já está com status "ok" — só tenta de novo o que
 faltou ou tomou rate limit ("Page View Limit Reached").
 """

@@ -2,7 +2,7 @@
 lista única de links, sem duplicar quem aparece perto da divisa de duas
 regiões.
 
-Não acessa a internet: só lê os JSONs de raw_data/regioes/*.json.
+Não acessa a internet: só lê os JSONs de data/raw/regioes/*.json.
 """
 import csv
 import sys

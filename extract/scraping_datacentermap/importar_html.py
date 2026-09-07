@@ -1,5 +1,5 @@
 """Importa HTMLs já baixados manualmente (fora do fluxo normal do
-run_pipeline.py) pro raw_data/datacentermap/, sem precisar rodar o Selenium
+run_pipeline.py) pro data/raw/datacentermap/, sem precisar rodar o Selenium
 de novo. Útil quando você já tem uma extração completa salva em disco de
 outra vez.
 

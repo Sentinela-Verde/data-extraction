@@ -1,6 +1,6 @@
 """Step 2 — Lê o cache do país (step 1) e gera a lista de regiões em CSV.
 
-Não acessa a internet: só lê raw_data/pais/<pais>.json.
+Não acessa a internet: só lê data/raw/pais/<pais>.json.
 """
 import csv
 import sys
@@ -15,7 +15,7 @@ def montar_regioes() -> list:
     registro = carregar(config.RAW_DATA_PAIS, config.PAIS)
     if not registro or registro.get("status") != STATUS_OK:
         raise RuntimeError(
-            f"Sem cache ok para '{config.PAIS}' em raw_data/pais/ — rode o step 1 primeiro."
+            f"Sem cache ok para '{config.PAIS}' em data/raw/pais/ — rode o step 1 primeiro."
         )
 
     geos = (registro["dados"] or {}).get("geos") or []
