@@ -2,7 +2,7 @@
 
 Pipeline de scraping organizado em steps bem definidos, com cache
 incremental em disco, para não precisar reprocessar tudo a cada execução.
-É uma das coletas dentro de `scraping_v2/` — ver o
+É uma das coletas dentro de `data-extraction/` — ver o
 [README da raiz](../README.md) pra entender como as coletas se encaixam
 (pastas `raw_data/` e `outputs/` compartilhadas).
 
@@ -25,7 +25,7 @@ datacenter — cada um na sua pasta, com o step que busca (Selenium) e o step
 que processa (local) lado a lado:
 
 ```
-scraping_v2/
+data-extraction/
 ├── raw_data/datacentermap/    # dado bruto extraído (= o cache) — compartilhado, ver README da raiz
 │   ├── pais/
 │   ├── regioes/
@@ -199,7 +199,7 @@ cache como se fosse um dado válido, e é buscado de novo automaticamente.
 Primeira vez:
 
 ```bash
-cd scraping_v2/scraping_datacentermap
+cd data-extraction/scraping_datacentermap
 pip install -r requirements.txt
 ```
 

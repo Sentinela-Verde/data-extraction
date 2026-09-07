@@ -2,7 +2,7 @@
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-# raiz de scraping_v2/ — onde ficam as pastas compartilhadas entre coletores
+# raiz de data-extraction/ — onde ficam as pastas compartilhadas entre coletores
 # (raw_data/ e outputs/), um nível acima de scraping_datacentermap/
 RAIZ_PROJETO = BASE_DIR.parent
 
@@ -15,7 +15,7 @@ FONTE = "datacentermap"  # nome dessa coleta, usado nas pastas/arquivos comparti
 PAIS = "brazil"
 
 # --- Raw data (cache) -----------------------------------------------------
-# Compartilhado entre coletores: scraping_v2/raw_data/<fonte>/... Cada país /
+# Compartilhado entre coletores: data-extraction/raw_data/<fonte>/... Cada país /
 # região / página de datacenter vira um .json pequeno aqui (só os dados que
 # importam, não o HTML inteiro) — é o dado bruto extraído, e também serve de
 # cache: rodar os steps de novo pula tudo que já está com status "ok".
@@ -32,7 +32,7 @@ CSV_REGIOES = OUTPUT_DIR / "regioes.csv"
 CSV_LINKS_DATACENTERS = OUTPUT_DIR / "datacenters_links.csv"
 
 # O CSV final é o "produto" dessa coleta e vai pra pasta compartilhada
-# scraping_v2/outputs/, junto com o resultado de outras coletas (ex.: IBGE).
+# data-extraction/outputs/, junto com o resultado de outras coletas (ex.: IBGE).
 OUTPUTS_COMPARTILHADOS = RAIZ_PROJETO / "outputs"
 CSV_FINAL = OUTPUTS_COMPARTILHADOS / f"{FONTE}_datacenters.csv"
 
