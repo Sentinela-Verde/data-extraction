@@ -1,4 +1,4 @@
-# api_ibge — coleta da Base dos Dados / IBGE (BigQuery)
+# bigquery_ibge — coleta da Base dos Dados / IBGE (BigQuery)
 
 Extração dos indicadores socioeconômicos dos municípios brasileiros (PIB,
 população, vocação econômica) via BigQuery, usando a
@@ -43,7 +43,7 @@ Duas coisas diferentes, não confundir:
 ## Como rodar
 
 ```bash
-cd data-extraction/api_ibge
+cd data-extraction/bigquery_ibge
 pip install -r requirements.txt
 python step0a_extract_dados_ibge.py
 ```

@@ -3,7 +3,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 # raiz do repo — onde ficam as pastas compartilhadas entre coletores
-# (raw_data/ e outputs/) e o .env, um nível acima de api_ibge/
+# (raw_data/ e outputs/) e o .env, um nível acima de bigquery_ibge/
 RAIZ_PROJETO = BASE_DIR.parent
 
 FONTE = "ibge"  # nome dessa coleta, usado no nome do CSV final
