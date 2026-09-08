@@ -1,0 +1,10 @@
+earthengine-api
+geemap
+numpy
+rasterio
+osmnx
+matplotlib
+pandas
+scikit-learn
+tensorflow
+python-dotenv
