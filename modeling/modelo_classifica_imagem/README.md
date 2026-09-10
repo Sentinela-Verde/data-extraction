@@ -70,6 +70,112 @@ classificação em si roda localmente, sem Earth Engine).
 - `data/raw/labels/<nome_datacenter>_worldcover.tif` — rótulo WorldCover exportado (cache
   intermediário, reaproveitável entre execuções).
 
+## Variante: classificação de obra (vegetação densa / grama / solo exposto / construção)
+
+`classification_obra.py` + `config_obra.py` + `step_classificacao_obra.py` são uma segunda
+linha de classificação, separada da acima, que alimenta `deteccao_fases_obra.py` — um
+terceiro fluxo, também separado, que decide a fase de obra (pré-obra / início / durante /
+fim) a partir das % geradas — pra série temporal Landsat de
+[`extract/imagens_satelite/landsat`](../../extract/imagens_satelite/landsat/README.md).
+
+Diferença chave: aqui o rótulo de treino **não** vem só do WorldCover ou de limiar fixo.
+Duas fontes de semente, combinadas:
+
+1. **MapBiomas** (`labels_mapbiomas.py`, `config.USAR_MAPBIOMAS = True` por padrão) —
+   classificação anual real do Brasil (não uma foto estática como o WorldCover), com classe
+   própria de área urbana/solo exposto/floresta/pastagem. Cobre só até
+   `labels_mapbiomas.ULTIMO_ANO_DISPONIVEL` (2024) — precisa de `PROJECT_ID` no `.env` pra
+   exportar (mesma variável do `extraction_landsat.py`), cacheado em
+   `data/raw/labels_mapbiomas/` depois da primeira vez.
+2. **Limiares em índices espectrais** (NDVI/NDBI/BSI/SAVI/REDNESS) — usado onde o MapBiomas
+   não opina (água, agricultura etc.) e nos anos fora da cobertura dele (2025/2026 na sua
+   série). REDNESS `(R-G)/(R+G)` ajuda a não confundir solo exposto (avermelhado, óxido de
+   ferro) com superfície clara/cinza que também tem BSI alto — mas não resolve telha
+   cerâmica (também avermelhada) nem a variação de cor do solo por região do Brasil, por
+   isso é só mais uma feature pro Random Forest, não uma regra isolada.
+
+A zona cinzenta que sobra (pixels sem opinião de nenhuma das duas fontes) fica sem
+rótulo-semente e é resolvida pelo Random Forest, treinado nos casos "óbvios" pooled de
+**todos** os data centers/anos disponíveis — não um "ano de referência" por site.
+`config.USAR_MAPBIOMAS = False` desliga a fonte 1 e treina só com a 2 (não precisa de Earth
+Engine pra treinar nesse modo).
+
+Passo a passo completo (extração → JPG → modelo, com amostra de referência de
+`ano_operacional` conhecido pra calibrar os limiares) está no
+[README do `extract/imagens_satelite/landsat`](../../extract/imagens_satelite/landsat/README.md#teste-inicial-com-amostra-de-referência).
+Resumo de como rodar só esta parte, assumindo os GeoTIFFs já baixados:
+
+```bash
+cd data-extraction/modeling/modelo_classifica_imagem
+python step_classificacao_obra.py       # treina + classifica -> % por classe/ano (sem gráfico)
+python deteccao_fases_obra.py           # a partir das %, decide a fase de cada ano
+```
+
+`classification_obra.py` continua independente de `classification.py`/`indices.py` (que
+puxam `osmnx` e `tensorflow`, não usados aqui). `labels_mapbiomas.py` é o único arquivo
+dessa variante que precisa de `earthengine-api`/`geemap` — só é importado quando
+`USAR_MAPBIOMAS=True`.
+
+Saídas de `step_classificacao_obra.py` em `data/silver/cobertura_obra/` (mesmo formato do
+pipeline principal, mas 4 classes, sem gráfico) e modelo treinado cacheado em
+`data/models/rf_obra_landsat.joblib` (apague pra forçar retreino depois de ajustar os
+limiares em `config_obra.py`). `deteccao_fases_obra.py` lê esse CSV e grava
+`fases_obra_por_ano.csv` + `fases_obra_resumo_por_datacenter.csv` no mesmo diretório — seus
+próprios limiares (% mínima por fase) ficam no topo do próprio arquivo, não em
+`config_obra.py`, já que é um fluxo deliberadamente separado.
+
+### `deteccao_fases_obra.py` — lógica de decisão
+
+A classificação por ano não é puramente independente ano a ano (isso fragmentava demais —
+ex.: um ano isolado voltando pra "Indefinido" entre dois anos de "Durante obra"), mas também
+não olha a série inteira de uma vez de forma "global" — um protótipo de segmentação global
+(tipo programação dinâmica) foi testado e **descartado**: ruído no fim da série conseguia
+sobrescrever uma decisão correta no meio, quebrando a trava de "Pós-obra" (ver abaixo), que é
+deliberadamente rígida. A versão em produção é um meio-termo, andando ano a ano com memória
+de estado:
+
+1. Classifica cada ano "cru" (`classifica_fase_ano`) a partir das % de cada classe naquele
+   ano, mais `delta_solo` (variação de solo exposto vs. o ano observado anterior — ajuda a
+   pegar "Início de obra" mesmo quando o solo exposto absoluto ainda está baixo, mas subiu
+   rápido).
+2. "Início de obra" só é confirmada se o ano seguinte mantiver ou avançar a fase (evita
+   marcar início por causa de um ano ruidoso isolado); "Fim de obra" **não** passa por essa
+   confirmação — fica imediata, porque atrasar essa detecção é pior que um falso positivo
+   ocasional.
+3. `preenche_buracos` fecha buracos de "Indefinido" cercados da mesma fase nos dois lados.
+4. Uma vez atingido "Fim de obra", todo ano seguinte é travado em "Pós-obra" (não reavalia
+   pra trás nem pra frente) — é essa trava que o approach de segmentação global quebrava.
+
+`LIMIAR_CONSTRUCAO_FIM = 51` foi calibrado por grid search contra os 9 data centers de
+referência (ver Calibrador de Obra abaixo). `LIMIAR_SOLO_EXPOSTO_FIM = 5` existe por causa de
+sites sem margem de paisagismo visível (ex.: Ascenty Hortolândia HTL5, no pipeline de 300m):
+"Fim de obra" também dispara se `solo_exposto` já está baixo, mesmo que `grama` nunca chegue
+no limiar normal — sem essa condição OR, esses sites ficavam presos em "Durante obra"
+indefinidamente.
+
+### Dashboard de calibração (Claude Artifact)
+
+Duas páginas interativas publicadas (privadas — só quem tem o link acessa), uma por pipeline,
+com os 9 data centers de referência, imagens JPG de cada ano e sliders que recalculam os
+limiares ao vivo:
+
+- 500m: https://claude.ai/code/artifact/1485ddfe-daa1-418e-b52f-ed2728189a9f
+- 300m: https://claude.ai/code/artifact/7d76b9d1-0b67-4ac4-8d72-9ec8fd96d836
+
+Não são gerados por nenhum script do repo — foram montados manualmente a partir dos CSVs de
+`fases_obra_por_ano.csv` + JPGs de cada ano. Se os CSVs mudarem (novo data center de
+referência, limiares recalibrados), essas páginas precisam ser republicadas manualmente.
+
+## Teste paralelo: imagem menor (300m)
+
+`config_obra_300m.py`, `step_classificacao_obra_300m.py` e `deteccao_fases_obra_300m.py` são
+cópias dos três arquivos equivalentes acima, apontando pra `data/raw/imagens_satelite_landsat_300m/`
+em vez de `data/raw/imagens_satelite_landsat/` — mesmo raciocínio e mesmos limiares, servindo
+só pra comparar contra a versão de 500m sem sobrescrever nada dela (ver
+[README do `extract/imagens_satelite/landsat`](../../extract/imagens_satelite/landsat/README.md#teste-paralelo-imagem-menor-300m-x-300m)
+pra como gerar os GeoTIFFs de entrada). `classification_obra.py` e `labels_mapbiomas.py` são
+compartilhados entre as duas versões (não dependem do tamanho da caixa).
+
 ## Limitações conhecidas
 
 - O treino usa só o ano de referência como rótulo — o WorldCover não tem uma versão
