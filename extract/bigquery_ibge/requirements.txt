@@ -1,2 +1,0 @@
-basedosdados
-python-dotenv

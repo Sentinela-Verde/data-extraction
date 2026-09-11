@@ -1,7 +1,0 @@
-earthengine-api
-geemap
-numpy
-rasterio
-matplotlib
-pandas
-python-dotenv
